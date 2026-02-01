@@ -229,7 +229,7 @@ if st.session_state.state == "INTERVIEW":
 # -------------------------------------------------
 if st.session_state.state == "RESULT":
 
-    if len(st.session_state.response_time) > 0:
+if len(st.session_state.response_time) > 0:
     avg_time = sum(st.session_state.response_time) / len(st.session_state.response_time)
 else:
     avg_time = 30  # default safe value
