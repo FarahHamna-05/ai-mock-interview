@@ -90,6 +90,7 @@ QUESTIONS = {
 # SESSION STATE
 # -------------------------------------------------
 if "state" not in st.session_state:
+    st.session_state.q_index = 0
     st.session_state.state = "START"
     st.session_state.score = 0
     st.session_state.bad = 0
@@ -140,7 +141,9 @@ if st.session_state.state == "START":
 # INTERVIEW PAGE
 # -------------------------------------------------
 if st.session_state.state == "INTERVIEW":
-    q = QUESTIONS[st.session_state.difficulty][0]
+    q_list = QUESTIONS[st.session_state.difficulty]
+q = q_list[st.session_state.q_index]
+
 
     TIME_LIMIT = 30 if st.session_state.difficulty == "easy" else 20
     elapsed = int(time.time() - st.session_state.start_time)
@@ -164,7 +167,7 @@ if st.session_state.state == "INTERVIEW":
 
         if answer == q["answer"]:
             st.session_state.score += 20
-            st.session_state.skill_score[q["skill"]] = st.session_state.skill_score.get(q["skill"], 0) + 1
+        st.session_state.skill_score[q["skill"]] = st.session_state.skill_score.get(q["skill"], 0) + 1
 
             if st.session_state.difficulty == "easy":
                 st.session_state.difficulty = "medium"
@@ -179,7 +182,14 @@ if st.session_state.state == "INTERVIEW":
 # -------------------------------------------------
 # FINAL RESULT PAGE
 # -------------------------------------------------
-if st.session_state.state == "RESULT":
+st.session_state.q_index += 1
+
+if st.session_state.q_index >= len(QUESTIONS[st.session_state.difficulty]):
+    st.session_state.state = "RESULT"
+else:
+    st.session_state.start_time = time.time()
+    st.rerun()
+
     avg_time = sum(st.session_state.response_time) / len(st.session_state.response_time)
 
     if avg_time < 10:
