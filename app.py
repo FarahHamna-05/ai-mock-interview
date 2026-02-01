@@ -229,11 +229,10 @@ if st.session_state.state == "INTERVIEW":
 # -------------------------------------------------
 if st.session_state.state == "RESULT":
 
-if len(st.session_state.response_time) > 0:
-    avg_time = sum(st.session_state.response_time) / len(st.session_state.response_time)
-else:
-    avg_time = 30  # default safe value
-
+    if len(st.session_state.response_time) > 0:
+        avg_time = sum(st.session_state.response_time) / len(st.session_state.response_time)
+    else:
+        avg_time = 30  # default safe value
 
     if avg_time < 10:
         confidence = "High"
@@ -241,6 +240,7 @@ else:
         confidence = "Medium"
     else:
         confidence = "Low"
+
 
     st.markdown("## 🎯 Interview Readiness Report")
 
