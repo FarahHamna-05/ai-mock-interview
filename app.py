@@ -140,10 +140,13 @@ if st.session_state.state == "START":
 # -------------------------------------------------
 # INTERVIEW PAGE
 # -------------------------------------------------
+# -------------------------------------------------
+# INTERVIEW PAGE
+# -------------------------------------------------
 if st.session_state.state == "INTERVIEW":
-    q_list = QUESTIONS[st.session_state.difficulty]
-q = q_list[st.session_state.q_index]
 
+    q_list = QUESTIONS[st.session_state.difficulty]
+    q = q_list[st.session_state.q_index]
 
     TIME_LIMIT = 30 if st.session_state.difficulty == "easy" else 20
     elapsed = int(time.time() - st.session_state.start_time)
@@ -156,28 +159,39 @@ q = q_list[st.session_state.q_index]
     st.markdown(f"### {q['q']}")
     answer = st.radio("Choose an answer:", q["options"])
 
+    # TIME UP
     if remaining == 0:
         st.session_state.bad += 1
         st.session_state.response_time.append(TIME_LIMIT)
         st.session_state.state = "RESULT"
         st.rerun()
 
+    # SUBMIT ANSWER
     if st.button("Submit Answer"):
         st.session_state.response_time.append(elapsed)
 
         if answer == q["answer"]:
             st.session_state.score += 20
-        st.session_state.skill_score[q["skill"]] = st.session_state.skill_score.get(q["skill"], 0) + 1
+            st.session_state.skill_score[q["skill"]] = (
+                st.session_state.skill_score.get(q["skill"], 0) + 1
+            )
 
             if st.session_state.difficulty == "easy":
                 st.session_state.difficulty = "medium"
+                st.session_state.q_index = 0
             elif st.session_state.difficulty == "medium":
                 st.session_state.difficulty = "hard"
+                st.session_state.q_index = 0
         else:
             st.session_state.bad += 1
 
-        st.session_state.state = "RESULT"
-        st.rerun()
+        st.session_state.q_index += 1
+
+        if st.session_state.q_index >= len(QUESTIONS[st.session_state.difficulty]):
+            st.session_state.state = "RESULT"
+        else:
+            st.session_state.start_time = time.time()
+            st.rerun()
 
 # -------------------------------------------------
 # FINAL RESULT PAGE
