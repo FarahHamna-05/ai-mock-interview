@@ -3,136 +3,186 @@ import time
 
 st.set_page_config(page_title="AI Mock Interview", layout="centered")
 
-# -----------------------------
-# QUESTIONS DATABASE
-# -----------------------------
+# ---------------------------------
+# MCQ QUESTION BANK
+# ---------------------------------
 QUESTIONS = {
     "easy": [
-        ("What is Python?", "python"),
-        ("What is a variable?", "variable")
+        {
+            "q": "What is Python?",
+            "options": [
+                "A snake",
+                "A programming language",
+                "A database",
+                "An operating system"
+            ],
+            "answer": "A programming language"
+        }
     ],
     "medium": [
-        ("Explain OOP concepts in Python.", "oop"),
-        ("Difference between list and tuple?", "list")
+        {
+            "q": "Which concept allows creating multiple objects from a class?",
+            "options": [
+                "Inheritance",
+                "Encapsulation",
+                "Polymorphism",
+                "Instantiation"
+            ],
+            "answer": "Instantiation"
+        }
     ],
     "hard": [
-        ("Explain multithreading in Python.", "thread"),
-        ("How does Python manage memory?", "memory")
+        {
+            "q": "What does multithreading improve in a program?",
+            "options": [
+                "Memory usage",
+                "Execution speed",
+                "Code readability",
+                "Syntax correctness"
+            ],
+            "answer": "Execution speed"
+        }
     ]
 }
 
-# -----------------------------
-# SESSION STATE INITIALIZATION
-# -----------------------------
+# ---------------------------------
+# SESSION STATE
+# ---------------------------------
 if "state" not in st.session_state:
     st.session_state.state = "START"
     st.session_state.score = 0
-    st.session_state.bad_answers = 0
+    st.session_state.bad = 0
     st.session_state.difficulty = "easy"
     st.session_state.q_index = 0
-    st.session_state.start_time = 0
-    st.session_state.history = []
+    st.session_state.start_time = time.time()
 
-# -----------------------------
+# ---------------------------------
 # TITLE
-# -----------------------------
-st.title("🤖 AI-Powered Mock Interview Platform")
-st.caption("State-Based Adaptive Interview Simulation")
+# ---------------------------------
+st.title("🤖 AI-Powered Mock Interview")
+st.caption("State-Based Interview with Adaptive Pressure")
 
-# -----------------------------
-# START STATE
-# -----------------------------
+# ---------------------------------
+# START PAGE
+# ---------------------------------
 if st.session_state.state == "START":
     st.subheader("📄 Resume & Job Description")
-    resume = st.text_area("Paste Resume Text")
-    jd = st.text_area("Paste Job Description")
+    st.text_area("Paste Resume Text")
+    st.text_area("Paste Job Description")
 
-    if st.button("Start Interview"):
+    if st.button("🚀 Start Interview"):
         st.session_state.state = "INTERVIEW"
         st.session_state.start_time = time.time()
         st.rerun()
 
-# -----------------------------
-# INTERVIEW STATE
-# -----------------------------
+# ---------------------------------
+# INTERVIEW PAGE
+# ---------------------------------
 if st.session_state.state == "INTERVIEW":
 
-    questions = QUESTIONS[st.session_state.difficulty]
+    qset = QUESTIONS[st.session_state.difficulty]
+    question = qset[st.session_state.q_index]
 
-    if st.session_state.q_index >= len(questions):
-        st.session_state.state = "END"
-        st.rerun()
-
-    question, keyword = questions[st.session_state.q_index]
-
-    st.subheader(f"Difficulty: {st.session_state.difficulty.upper()}")
-    st.write(f"🧠 Question: {question}")
-
-    answer = st.text_area("✍️ Your Answer")
-
-    TIME_LIMIT = 60
+    TIME_LIMIT = 30
     elapsed = int(time.time() - st.session_state.start_time)
     remaining = max(0, TIME_LIMIT - elapsed)
 
-    st.write(f"⏱ Time Remaining: {remaining} seconds")
+    st.subheader(f"Difficulty: {st.session_state.difficulty.upper()}")
+    st.progress(remaining / TIME_LIMIT)
+    st.write(f"⏱ Time Remaining: **{remaining} seconds**")
 
-    # -----------------------------
-    # TIME EXCEEDED
-    # -----------------------------
-    if elapsed > TIME_LIMIT:
-        st.warning("⛔ Time exceeded! Penalty applied.")
-        st.session_state.bad_answers += 1
-        st.session_state.q_index += 1
+    st.markdown(f"### 🧠 {question['q']}")
+
+    choice = st.radio(
+        "Choose your answer:",
+        question["options"],
+        key="mcq"
+    )
+
+    # TIME OVER
+    if remaining == 0:
+        st.warning("⛔ Time Up!")
+        st.session_state.bad += 1
+        st.session_state.q_index = 0
         st.session_state.start_time = time.time()
 
-        if st.session_state.bad_answers >= 2:
+        if st.session_state.bad >= 2:
             st.session_state.state = "TERMINATED"
 
-        st.experimental_rerun()
+        st.rerun()
 
-    # -----------------------------
-    # SUBMIT ANSWER
-    # -----------------------------
+    # SUBMIT
     if st.button("Submit Answer"):
-        score = 0
+        if choice == question["answer"]:
+            st.success("✅ Correct Answer")
+            st.session_state.score += 20
 
-        # Objective scoring rules
-        if len(answer.strip()) > 20:
-            score += 40
-        if keyword.lower() in answer.lower():
-            score += 40
-        if elapsed < 40:
-            score += 20
-
-        st.session_state.score += score
-        st.session_state.history.append(score)
-
-        # Difficulty adaptation
-        if score >= 70:
+            # Increase difficulty
             if st.session_state.difficulty == "easy":
                 st.session_state.difficulty = "medium"
             elif st.session_state.difficulty == "medium":
                 st.session_state.difficulty = "hard"
         else:
-            st.session_state.bad_answers += 1
+            st.error("❌ Wrong Answer")
+            st.session_state.bad += 1
 
-        # Early termination logic
-        if st.session_state.bad_answers >= 2:
+        if st.session_state.bad >= 2:
             st.session_state.state = "TERMINATED"
             st.rerun()
 
-        st.session_state.q_index += 1
         st.session_state.start_time = time.time()
         st.rerun()
 
-# -----------------------------
-# TERMINATED STATE
-# -----------------------------
+# ---------------------------------
+# TERMINATED PAGE
+# ---------------------------------
 if st.session_state.state == "TERMINATED":
     st.error("🚫 Interview Terminated Early")
-    st.write("Reason: Poor performance or time violations")
-    st.write(f"Final Score: **{st.session_state.score}**")
+    st.write("Reason: Poor performance under pressure")
+    st.write(f"### Final Score: {st.session_state.score}")
 
-# -----------------------------
-# END STATE
-# --------------
+# ---------------------------------
+# FINAL RESULT PAGE
+# ---------------------------------
+if st.session_state.score >= 60:
+    readiness = "Strong"
+    emoji = "🔥"
+elif st.session_state.score >= 40:
+    readiness = "Average"
+    emoji = "⚠️"
+else:
+    readiness = "Needs Improvement"
+    emoji = "❌"
+
+if st.session_state.state in ["TERMINATED"] or st.session_state.score >= 60:
+
+    st.markdown("---")
+    st.markdown("## 🎯 Interview Readiness Report")
+
+    st.metric(
+        label="Final Score",
+        value=f"{st.session_state.score} / 100",
+        delta=readiness
+    )
+
+    st.progress(st.session_state.score / 100)
+
+    st.markdown(f"### {emoji} Status: **{readiness}**")
+
+    st.markdown("### 🧠 Performance Insights")
+    if readiness == "Strong":
+        st.write("✔ Strong fundamentals")
+        st.write("✔ Handles pressure well")
+    elif readiness == "Average":
+        st.write("✔ Basic understanding")
+        st.write("✖ Needs better consistency")
+    else:
+        st.write("✖ Weak fundamentals")
+        st.write("✖ Poor time management")
+
+    st.markdown("### 🏁 Hiring Decision")
+    if readiness == "Strong":
+        st.success("✅ Ready for Technical Interviews")
+    else:
+        st.warning("❌ Not Ready for This Role Yet")
+
