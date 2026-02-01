@@ -36,3 +36,6 @@ This web application helps candidates **prepare for job interviews** by evaluati
 - **Time-tracking** for timed interview simulation
 
 ---
+
+## 🎬 Demo Video
+Watch the demo here: [AI Mock Interview Simulator Demo](https://drive.google.com/file/d/1QI569XkJ2CLZJqnhMc9qc6lUW37cm7Kt/view?usp=drive_link)
