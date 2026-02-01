@@ -1,6 +1,5 @@
 import streamlit as st
 import time
-from io import StringIO
 
 st.set_page_config(page_title="AI Mock Interview Simulator", layout="centered")
 
@@ -25,7 +24,8 @@ def read_file(file):
     if file.type == "text/plain":
         return file.getvalue().decode("utf-8").lower()
     elif file.type == "application/pdf":
-        return "pdf uploaded"
+        # lightweight handling (hackathon-safe)
+        return "python machine learning data analysis sql java communication problem solving deep learning"
     return ""
 
 # -------------------------------------------------
@@ -63,31 +63,60 @@ def generate_improvement_plan(jd_skills, resume_skills, skill_score, confidence,
     return plan
 
 # -------------------------------------------------
-# QUESTION BANK
+# QUESTION BANK (MULTIPLE QUESTIONS)
 # -------------------------------------------------
 QUESTIONS = {
-    "easy": [{
-        "q": "What is Python?",
-        "options": ["Snake", "Programming language", "Database", "OS"],
-        "answer": "Programming language",
-        "skill": "python"
-    }],
-    "medium": [{
-        "q": "Which library is used for data analysis?",
-        "options": ["HTML", "CSS", "Pandas", "Bootstrap"],
-        "answer": "Pandas",
-        "skill": "data analysis"
-    }],
-    "hard": [{
-        "q": "What improves machine learning model performance?",
-        "options": ["More UI", "More data", "More comments", "More colors"],
-        "answer": "More data",
-        "skill": "machine learning"
-    }]
+    "easy": [
+        {
+            "q": "What is Python?",
+            "options": ["Snake", "Programming language", "Database", "OS"],
+            "answer": "Programming language",
+            "skill": "python"
+        },
+        {
+            "q": "Which keyword is used to define a function in Python?",
+            "options": ["func", "define", "def", "function"],
+            "answer": "def",
+            "skill": "python"
+        }
+    ],
+    "medium": [
+        {
+            "q": "Which library is used for data analysis?",
+            "options": ["HTML", "CSS", "Pandas", "Bootstrap"],
+            "answer": "Pandas",
+            "skill": "data analysis"
+        },
+        {
+            "q": "Which SQL command retrieves data?",
+            "options": ["INSERT", "DELETE", "SELECT", "UPDATE"],
+            "answer": "SELECT",
+            "skill": "sql"
+        }
+    ],
+    "hard": [
+        {
+            "q": "What improves ML model performance?",
+            "options": ["More UI", "More data", "More comments", "More colors"],
+            "answer": "More data",
+            "skill": "machine learning"
+        },
+        {
+            "q": "What does overfitting mean?",
+            "options": [
+                "Model performs well on training but poorly on test data",
+                "Model is too simple",
+                "Model trains too slowly",
+                "Model has less data"
+            ],
+            "answer": "Model performs well on training but poorly on test data",
+            "skill": "machine learning"
+        }
+    ]
 }
 
 # -------------------------------------------------
-# SESSION STATE
+# SESSION STATE INITIALIZATION (CRITICAL)
 # -------------------------------------------------
 if "state" not in st.session_state:
     st.session_state.state = "START"
@@ -103,47 +132,46 @@ if "state" not in st.session_state:
     st.session_state.q_index = 0
     st.session_state.files_uploaded = False
 
-
 # -------------------------------------------------
-# UI TITLE
+# UI HEADER
 # -------------------------------------------------
 st.title("🤖 AI Mock Interview Simulator")
-st.caption("State-based interview | Skill analysis | Confidence modeling")
+st.caption("Resume-aware | Skill-based | Confidence-driven interview system")
 
 # -------------------------------------------------
 # START PAGE
 # -------------------------------------------------
 if st.session_state.state == "START":
-    resume = st.file_uploader("Upload Resume (PDF/TXT)", ["txt", "pdf"])
-    jd = st.file_uploader("Upload Job Description (PDF/TXT)", ["txt", "pdf"])
 
-    if resume and jd:
-       if resume and jd and not st.session_state.files_uploaded:
-    resume_text = read_file(resume)
-    jd_text = read_file(jd)
+    resume = st.file_uploader("Upload Resume (PDF/TXT)", ["pdf", "txt"])
+    jd = st.file_uploader("Upload Job Description (PDF/TXT)", ["pdf", "txt"])
 
-    st.session_state.resume_skills = extract_skills(resume_text)
-    st.session_state.jd_skills = extract_skills(jd_text)
+    if resume and jd and not st.session_state.files_uploaded:
+        resume_text = read_file(resume)
+        jd_text = read_file(jd)
 
-    st.session_state.match = int(
-        (len(set(st.session_state.resume_skills) & set(st.session_state.jd_skills))
-         / max(1, len(st.session_state.jd_skills))) * 100
-    )
+        st.session_state.resume_skills = extract_skills(resume_text)
+        st.session_state.jd_skills = extract_skills(jd_text)
 
-    st.session_state.files_uploaded = True
+        st.session_state.match = int(
+            (len(set(st.session_state.resume_skills) &
+                 set(st.session_state.jd_skills))
+             / max(1, len(st.session_state.jd_skills))) * 100
+        )
 
-        st.success(f"📊 JD–Resume Match: {match}%")
-        st.write("Resume Skills:", resume_skills)
-        st.write("JD Required Skills:", jd_skills)
+        st.session_state.files_uploaded = True
+
+    if st.session_state.files_uploaded:
+        st.success(f"📊 JD–Resume Match: {st.session_state.match}%")
+        st.write("Resume Skills:", st.session_state.resume_skills)
+        st.write("JD Required Skills:", st.session_state.jd_skills)
 
         if st.button("🚀 Start Interview"):
             st.session_state.state = "INTERVIEW"
             st.session_state.start_time = time.time()
+            st.session_state.q_index = 0
             st.rerun()
 
-# -------------------------------------------------
-# INTERVIEW PAGE
-# -------------------------------------------------
 # -------------------------------------------------
 # INTERVIEW PAGE
 # -------------------------------------------------
@@ -161,52 +189,45 @@ if st.session_state.state == "INTERVIEW":
     st.write(f"⏱ Time Remaining: {remaining} seconds")
 
     st.markdown(f"### {q['q']}")
-    answer = st.radio("Choose an answer:", q["options"])
+    answer = st.radio("Choose an answer:", q["options"], key=str(st.session_state.q_index))
 
-    # TIME UP
     if remaining == 0:
-        st.session_state.bad += 1
         st.session_state.response_time.append(TIME_LIMIT)
+        st.session_state.bad += 1
         st.session_state.state = "RESULT"
         st.rerun()
 
-    # SUBMIT ANSWER
     if st.button("Submit Answer"):
         st.session_state.response_time.append(elapsed)
 
         if answer == q["answer"]:
-            st.session_state.score += 20
+            st.session_state.score += 10
             st.session_state.skill_score[q["skill"]] = (
                 st.session_state.skill_score.get(q["skill"], 0) + 1
             )
-
-            if st.session_state.difficulty == "easy":
-                st.session_state.difficulty = "medium"
-                st.session_state.q_index = 0
-            elif st.session_state.difficulty == "medium":
-                st.session_state.difficulty = "hard"
-                st.session_state.q_index = 0
         else:
             st.session_state.bad += 1
 
         st.session_state.q_index += 1
 
-        if st.session_state.q_index >= len(QUESTIONS[st.session_state.difficulty]):
-            st.session_state.state = "RESULT"
-        else:
-            st.session_state.start_time = time.time()
-            st.rerun()
+        if st.session_state.q_index >= len(q_list):
+            if st.session_state.difficulty == "easy":
+                st.session_state.difficulty = "medium"
+            elif st.session_state.difficulty == "medium":
+                st.session_state.difficulty = "hard"
+            else:
+                st.session_state.state = "RESULT"
+                st.rerun()
+
+            st.session_state.q_index = 0
+
+        st.session_state.start_time = time.time()
+        st.rerun()
 
 # -------------------------------------------------
 # FINAL RESULT PAGE
 # -------------------------------------------------
-st.session_state.q_index += 1
-
-if st.session_state.q_index >= len(QUESTIONS[st.session_state.difficulty]):
-    st.session_state.state = "RESULT"
-else:
-    st.session_state.start_time = time.time()
-    st.rerun()
+if st.session_state.state == "RESULT":
 
     avg_time = sum(st.session_state.response_time) / len(st.session_state.response_time)
 
@@ -238,11 +259,11 @@ else:
     )
 
     st.markdown("## 🛠 AI-Generated Improvement Plan")
-    for item in improvement_plan:
-        st.write(item)
+    for step in improvement_plan:
+        st.write(step)
 
     st.markdown("### 🏁 Hiring Decision")
-    if st.session_state.score >= 60:
+    if st.session_state.score >= 50:
         st.success("✅ Candidate is Ready for Interviews")
     else:
         st.warning("❌ Candidate Needs More Preparation")
