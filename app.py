@@ -90,7 +90,6 @@ QUESTIONS = {
 # SESSION STATE
 # -------------------------------------------------
 if "state" not in st.session_state:
-    st.session_state.q_index = 0
     st.session_state.state = "START"
     st.session_state.score = 0
     st.session_state.bad = 0
@@ -101,6 +100,7 @@ if "state" not in st.session_state:
     st.session_state.resume_skills = []
     st.session_state.jd_skills = []
     st.session_state.match = 0
+    st.session_state.q_index = 0   
 
 # -------------------------------------------------
 # UI TITLE
