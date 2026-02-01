@@ -100,7 +100,9 @@ if "state" not in st.session_state:
     st.session_state.resume_skills = []
     st.session_state.jd_skills = []
     st.session_state.match = 0
-    st.session_state.q_index = 0   
+    st.session_state.q_index = 0
+    st.session_state.files_uploaded = False
+
 
 # -------------------------------------------------
 # UI TITLE
@@ -116,17 +118,19 @@ if st.session_state.state == "START":
     jd = st.file_uploader("Upload Job Description (PDF/TXT)", ["txt", "pdf"])
 
     if resume and jd:
-        resume_text = read_file(resume)
-        jd_text = read_file(jd)
+       if resume and jd and not st.session_state.files_uploaded:
+    resume_text = read_file(resume)
+    jd_text = read_file(jd)
 
-        resume_skills = extract_skills(resume_text)
-        jd_skills = extract_skills(jd_text)
+    st.session_state.resume_skills = extract_skills(resume_text)
+    st.session_state.jd_skills = extract_skills(jd_text)
 
-        match = int((len(set(resume_skills) & set(jd_skills)) / max(1, len(jd_skills))) * 100)
+    st.session_state.match = int(
+        (len(set(st.session_state.resume_skills) & set(st.session_state.jd_skills))
+         / max(1, len(st.session_state.jd_skills))) * 100
+    )
 
-        st.session_state.resume_skills = resume_skills
-        st.session_state.jd_skills = jd_skills
-        st.session_state.match = match
+    st.session_state.files_uploaded = True
 
         st.success(f"📊 JD–Resume Match: {match}%")
         st.write("Resume Skills:", resume_skills)
