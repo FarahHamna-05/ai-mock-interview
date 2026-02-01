@@ -50,7 +50,7 @@ if st.session_state.state == "START":
     if st.button("Start Interview"):
         st.session_state.state = "INTERVIEW"
         st.session_state.start_time = time.time()
-        st.experimental_rerun()
+        st.rerun()
 
 # -----------------------------
 # INTERVIEW STATE
@@ -61,7 +61,7 @@ if st.session_state.state == "INTERVIEW":
 
     if st.session_state.q_index >= len(questions):
         st.session_state.state = "END"
-        st.experimental_rerun()
+        st.rerun()
 
     question, keyword = questions[st.session_state.q_index]
 
@@ -119,11 +119,11 @@ if st.session_state.state == "INTERVIEW":
         # Early termination logic
         if st.session_state.bad_answers >= 2:
             st.session_state.state = "TERMINATED"
-            st.experimental_rerun()
+            st.rerun()
 
         st.session_state.q_index += 1
         st.session_state.start_time = time.time()
-        st.experimental_rerun()
+        st.rerun()
 
 # -----------------------------
 # TERMINATED STATE
